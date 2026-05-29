@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@theme {
+  --color-navy-950: #030712;
+  --color-navy-900: #0A1926;
+  --color-navy-800: #11293e;
+  --color-navy-700: #183a56;
+  --color-navy-600: #1e4b6e;
+  --color-navy-500: #255b85;
+  --color-navy-default: #0A1926;
+
+  --color-gold-100: #fffbeb;
+  --color-gold-200: #fef08a;
+  --color-gold-300: #fde047;
+  --color-gold-400: #facc15;
+  --color-gold-500: #eab308;
+  --color-gold-600: #ca8a04;
+  --color-gold-default: #FFD700;
+
+  --font-sans: 'Outfit', 'Inter', 'sans-serif';
+  
+  --shadow-gold-glow: 0 0 15px rgba(255, 215, 0, 0.15);
+  --shadow-gold-glow-lg: 0 0 25px rgba(255, 215, 0, 0.25);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode scrollbar override */
+.dark ::-webkit-scrollbar-thumb {
+  background: #11293e;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #183a56;
+}
+
+/* Shake Animation for Wrong Password */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-light {
+  background: rgba(10, 25, 38, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(10, 25, 38, 0.05);
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg, #11293e 25%, #183a56 50%, #11293e 75%);
+  background-size: 200% 100%;
+}
