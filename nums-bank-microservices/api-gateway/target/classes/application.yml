@@ -18,13 +18,13 @@ spring:
       routes:
         # ── Auth Service ──────────────────────────────────
         - id: auth-service
-          uri: https://auth-service.onrender.com
+          uri: https://auth-service-o3e7.onrender.com
           predicates:
             - Path=/api/auth/**
 
         # ── Account Service ───────────────────────────────
         - id: account-service
-          uri: https://account-service-5q3k.onrender.com
+          uri: https://account-service-8kwx.onrender.com
           predicates:
             - Path=/api/accounts/**
 
