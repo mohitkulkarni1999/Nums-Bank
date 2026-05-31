@@ -26,7 +26,7 @@ spring:
     type: simple
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -38,7 +38,7 @@ spring:
         generate_statistics: false
   sql:
     init:
-      mode: never
+      mode: always
 
 numsbank:
   jwt:
