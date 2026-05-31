@@ -11,38 +11,38 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:5173"
+            allowedOrigins: "https://nums-bank.vercel.app"
             allowedMethods: ["GET","POST","PUT","DELETE","OPTIONS","PATCH"]
             allowedHeaders: ["Authorization","Content-Type","Cache-Control"]
             allowCredentials: true
       routes:
         # ── Auth Service ──────────────────────────────────
         - id: auth-service
-          uri: http://localhost:8081
+          uri: https://auth-service.onrender.com
           predicates:
             - Path=/api/auth/**
 
         # ── Account Service ───────────────────────────────
         - id: account-service
-          uri: http://localhost:8082
+          uri: https://account-service-5q3k.onrender.com
           predicates:
             - Path=/api/accounts/**
 
         # ── Transaction Service ───────────────────────────
         - id: transaction-service
-          uri: http://localhost:8083
+          uri: https://transaction-service-khc7.onrender.com
           predicates:
             - Path=/api/transactions/**
 
         # ── Loan Service ──────────────────────────────────
         - id: loan-service
-          uri: http://localhost:8084
+          uri: https://loan-service-gkpk.onrender.com
           predicates:
             - Path=/api/loans/**
 
         # ── Admin Service ─────────────────────────────────
         - id: admin-service
-          uri: http://localhost:8085
+          uri: https://admin-service-9a29.onrender.com
           predicates:
             - Path=/api/admin/**
 
