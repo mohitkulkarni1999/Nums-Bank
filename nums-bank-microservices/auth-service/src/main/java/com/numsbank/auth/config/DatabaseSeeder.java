@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-@Component
+// @Component
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final JdbcTemplate jdbcTemplate;
