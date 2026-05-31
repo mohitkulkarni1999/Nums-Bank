@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: account-service
+    env: java
+    buildCommand: mvn clean package
+    startCommand: java -jar target/account-service-1.0.0.jar
