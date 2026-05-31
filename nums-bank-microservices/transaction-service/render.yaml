@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: transaction-service
-    env: java
-    buildCommand: mvn clean package
-    startCommand: java -jar target/transaction-service-1.0.0.jar

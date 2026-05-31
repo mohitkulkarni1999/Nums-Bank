@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: loan-service
-    env: java
-    buildCommand: mvn clean package
-    startCommand: java -jar target/loan-service-1.0.0.jar
