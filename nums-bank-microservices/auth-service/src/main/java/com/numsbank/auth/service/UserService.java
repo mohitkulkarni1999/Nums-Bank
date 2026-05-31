@@ -1,8 +1,8 @@
 package com.numsbank.auth.service;
 
-import com.numsbank.auth.entity.*;
+import com.numsbank.auth.entity.User;
 import com.numsbank.auth.exception.CustomException;
-import com.numsbank.auth.repository.*;
+import com.numsbank.auth.repository.UserRepository;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,23 +21,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
-    private final TransactionPinRepository pinRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AccountRepository accountRepository;
-    private final NomineeRepository nomineeRepository;
 
     private final Map<String, OtpDetails> otpStorage = new ConcurrentHashMap<>();
 
     public UserService(UserRepository userRepository,
-                       TransactionPinRepository pinRepository,
-                       @Lazy PasswordEncoder passwordEncoder,
-                       AccountRepository accountRepository,
-                       NomineeRepository nomineeRepository) {
+                       @Lazy PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.pinRepository = pinRepository;
         this.passwordEncoder = passwordEncoder;
-        this.accountRepository = accountRepository;
-        this.nomineeRepository = nomineeRepository;
     }
 
     @Override
@@ -85,23 +75,7 @@ public class UserService implements UserDetailsService {
         user.setIsApproved(true);
         user.setRole("USER");
 
-        User savedUser = userRepository.save(user);
-
-        // Generate a default 6-digit transaction PIN (123456)
-        String defaultPinHash = passwordEncoder.encode("123456");
-        TransactionPin pin = new TransactionPin(savedUser.getId(), defaultPinHash);
-        pinRepository.save(pin);
-
-        // Provision a primary Savings Account with a ₹10,000.00 starting balance
-        Account account = new Account();
-        account.setUser(savedUser);
-        account.setAccountNumber(generateUniqueAccountNumber("SAVINGS"));
-        account.setAccountType("SAVINGS");
-        account.setBalance(new BigDecimal("10000.00"));
-        account.setIsActive(true);
-        accountRepository.save(account);
-
-        return savedUser;
+        return userRepository.save(user);
     }
 
     public User getCurrentUser() {
@@ -148,58 +122,6 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
-    @Transactional
-    public void changeTransactionPin(String currentPin, String newPin) {
-        User user = getCurrentUser();
-        TransactionPin pinDetails = pinRepository.findById(user.getId())
-                .orElseThrow(() -> new CustomException("Transaction PIN not set up.", HttpStatus.BAD_REQUEST));
-
-        if (pinDetails.getIsLocked()) {
-            throw new CustomException("PIN is locked. Please contact support to reset.", HttpStatus.FORBIDDEN);
-        }
-        if (!passwordEncoder.matches(currentPin, pinDetails.getPinHash())) {
-            pinDetails.setFailedAttempts(pinDetails.getFailedAttempts() + 1);
-            if (pinDetails.getFailedAttempts() >= 3) {
-                pinDetails.setIsLocked(true);
-            }
-            pinRepository.save(pinDetails);
-            throw new CustomException("Current PIN is incorrect.", HttpStatus.BAD_REQUEST);
-        }
-        if (newPin == null || newPin.length() != 6 || !newPin.matches("\\d{6}")) {
-            throw new CustomException("New PIN must be exactly 6 digits.", HttpStatus.BAD_REQUEST);
-        }
-
-        pinDetails.setPinHash(passwordEncoder.encode(newPin));
-        pinDetails.setFailedAttempts(0);
-        pinDetails.setIsLocked(false);
-        pinRepository.save(pinDetails);
-    }
-
-    @Transactional
-    public void unlockTransactionPin(Long userId) {
-        TransactionPin pinDetails = pinRepository.findById(userId)
-                .orElseThrow(() -> new CustomException("PIN record not found.", HttpStatus.NOT_FOUND));
-        pinDetails.setIsLocked(false);
-        pinDetails.setFailedAttempts(0);
-        pinRepository.save(pinDetails);
-    }
-
-    @Transactional
-    public Nominee saveNominee(String nomineeName, String relationship, int age, int allocationPercent) {
-        User user = getCurrentUser();
-        Nominee nominee = nomineeRepository.findFirstByUser(user).orElse(new Nominee());
-        nominee.setUser(user);
-        nominee.setNomineeName(nomineeName.trim());
-        nominee.setRelationship(relationship.trim());
-        nominee.setAge(age);
-        nominee.setAllocationPercent(allocationPercent);
-        return nomineeRepository.save(nominee);
-    }
-
-    public Optional<Nominee> getNominee() {
-        User user = getCurrentUser();
-        return nomineeRepository.findFirstByUser(user);
-    }
 
     public String generateForgotPasswordOtp(String email) {
         User user = userRepository.findByEmail(email)
@@ -233,16 +155,6 @@ public class UserService implements UserDetailsService {
         otpStorage.remove(email);
     }
 
-    private String generateUniqueAccountNumber(String type) {
-        Random random = new Random();
-        String prefix = "SAVINGS".equalsIgnoreCase(type) ? "SAV" : "CUR";
-        String accountNumber;
-        do {
-            long suffix = 10000000L + random.nextInt(90000000);
-            accountNumber = prefix + suffix;
-        } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
-        return accountNumber;
-    }
 
     private static class OtpDetails {
         private final String otp;

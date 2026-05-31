@@ -11,13 +11,13 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/nums_bank?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 100
-      minimum-idle: 20
+      maximum-pool-size: 5
+      minimum-idle: 1
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
@@ -26,7 +26,7 @@ spring:
     type: simple
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -38,7 +38,7 @@ spring:
         generate_statistics: false
   sql:
     init:
-      mode: never
+      mode: always
 
 numsbank:
   jwt:

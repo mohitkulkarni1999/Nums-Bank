@@ -1,7 +1,6 @@
 package com.numsbank.auth.controller;
 
 import com.numsbank.auth.config.JwtTokenProvider;
-import com.numsbank.auth.entity.Nominee;
 import com.numsbank.auth.entity.User;
 import com.numsbank.auth.exception.CustomException;
 import com.numsbank.auth.service.AuditService;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -185,47 +183,6 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/change-pin")
-    public ResponseEntity<?> changeTransactionPin(@RequestBody Map<String, String> body,
-                                                  HttpServletRequest httpRequest) {
-        String currentPin = body.get("currentPin");
-        String newPin = body.get("newPin");
-        if (currentPin == null || newPin == null) {
-            throw new CustomException("Current PIN and new PIN are required.", HttpStatus.BAD_REQUEST);
-        }
-        userService.changeTransactionPin(currentPin, newPin);
-        User user = userService.getCurrentUser();
-        auditService.log(user.getId(), user.getEmail(), "PIN_CHANGED",
-                "Transaction PIN changed", getClientIp(httpRequest));
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Transaction PIN changed successfully.");
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/nominee")
-    public ResponseEntity<?> saveNominee(@RequestBody Map<String, Object> body) {
-        String nomineeName = (String) body.get("nomineeName");
-        String relationship = (String) body.get("relationship");
-        int age = Integer.parseInt(body.get("age").toString());
-        int allocationPercent = body.containsKey("allocationPercent")
-                ? Integer.parseInt(body.get("allocationPercent").toString()) : 100;
-
-        if (nomineeName == null || nomineeName.isBlank() || relationship == null || relationship.isBlank()) {
-            throw new CustomException("Nominee name and relationship are required.", HttpStatus.BAD_REQUEST);
-        }
-        if (age < 0 || age > 120) {
-            throw new CustomException("Invalid nominee age.", HttpStatus.BAD_REQUEST);
-        }
-
-        Nominee nominee = userService.saveNominee(nomineeName, relationship, age, allocationPercent);
-        return ResponseEntity.ok(nominee);
-    }
-
-    @GetMapping("/nominee")
-    public ResponseEntity<?> getNominee() {
-        Optional<Nominee> nominee = userService.getNominee();
-        return ResponseEntity.ok(nominee.orElse(null));
-    }
 
     @GetMapping("/audit-logs")
     public ResponseEntity<?> getMyAuditLogs(
