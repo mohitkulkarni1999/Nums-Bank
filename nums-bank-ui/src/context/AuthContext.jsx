@@ -46,10 +46,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Completely separate admin login — calls /api/admin/auth/login
+  // Completely separate admin login — calls /api/auth/login
   const adminLogin = async (email, password) => {
     try {
-      const response = await api.post('/admin/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
       const { token: jwtToken, userDetails } = response.data;
 
       localStorage.setItem('token', jwtToken);
