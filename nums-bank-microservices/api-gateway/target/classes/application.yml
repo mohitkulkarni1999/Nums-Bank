@@ -1,51 +1,49 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "https://nums-bank.vercel.app"
-            allowedMethods: ["GET","POST","PUT","DELETE","OPTIONS","PATCH"]
-            allowedHeaders: ["Authorization","Content-Type","Cache-Control"]
+            allowedOrigins:
+              - https://nums-bank.vercel.app
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
             allowCredentials: true
+
       routes:
-        # ── Auth Service ──────────────────────────────────
         - id: auth-service
           uri: https://auth-service-o3e7.onrender.com
           predicates:
             - Path=/api/auth/**
 
-        # ── Account Service ───────────────────────────────
         - id: account-service
           uri: https://account-service-8kwx.onrender.com
           predicates:
             - Path=/api/accounts/**
 
-        # ── Transaction Service ───────────────────────────
         - id: transaction-service
           uri: https://transaction-service-khc7.onrender.com
           predicates:
             - Path=/api/transactions/**
 
-        # ── Loan Service ──────────────────────────────────
         - id: loan-service
           uri: https://loan-service-gkpk.onrender.com
           predicates:
             - Path=/api/loans/**
 
-        # ── Admin Service ─────────────────────────────────
         - id: admin-service
           uri: https://admin-service-9a29.onrender.com
           predicates:
             - Path=/api/admin/**
-
-logging:
-  level:
-    org.springframework.cloud.gateway: INFO
