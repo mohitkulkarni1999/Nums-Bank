@@ -47,6 +47,11 @@ export const Profile = () => {
   const [isTwoFactor, setIsTwoFactor] = useState(false);
   const [isSmsAlert, setIsSmsAlert] = useState(true);
 
+  // Account creation states
+  const [accountType, setAccountType] = useState('SAVINGS');
+  const [initialDeposit, setInitialDeposit] = useState('');
+  const [accountLoading, setAccountLoading] = useState(false);
+
   // Profile update submit
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -111,6 +116,31 @@ export const Profile = () => {
     }
     setNomineeRegistered(true);
     Toast.success('Nominee registered successfully for account estate.');
+  };
+
+  // Account creation
+  const handleAccountCreate = async (e) => {
+    e.preventDefault();
+    if (!initialDeposit || parseFloat(initialDeposit) < 0) {
+      Toast.error('Please enter a valid initial deposit amount.');
+      return;
+    }
+
+    setAccountLoading(true);
+    try {
+      await api.post('/accounts/create', {
+        type: accountType,
+        initialDeposit: parseFloat(initialDeposit)
+      });
+      Toast.success(`${accountType} account created successfully!`);
+      setInitialDeposit('');
+      // Refresh the page to load new accounts
+      window.location.reload();
+    } catch (err) {
+      Toast.error(err.response?.data?.message || 'Failed to create account.');
+    } finally {
+      setAccountLoading(false);
+    }
   };
 
   return (
@@ -320,6 +350,37 @@ export const Profile = () => {
             <Button onClick={handleLimitsSave} className="w-48 self-end mt-2">
               Save Channels limits
             </Button>
+          </Card>
+
+          {/* Account Creation Card */}
+          <Card className="p-6">
+            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5 mb-4 select-none">
+              <UserCircle2 className="w-5 h-5 text-[#FFD700]" />
+              <span>Create New Bank Account</span>
+            </h3>
+            <form onSubmit={handleAccountCreate} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Account Type</label>
+                <select
+                  value={accountType}
+                  onChange={(e) => setAccountType(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-navy-900 border-slate-200 dark:border-navy-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FFD700] text-sm"
+                >
+                  <option value="SAVINGS">Savings Account</option>
+                  <option value="CURRENT">Current Account</option>
+                </select>
+              </div>
+              <Input
+                label="Initial Deposit (₹)"
+                placeholder="e.g. 5000"
+                type="number"
+                value={initialDeposit}
+                onChange={(e) => setInitialDeposit(e.target.value)}
+              />
+              <Button type="submit" loading={accountLoading} className="w-full bg-[#FFD700] hover:bg-[#ca8a04]">
+                Create Account
+              </Button>
+            </form>
           </Card>
 
           {/* Nominee details form */}
