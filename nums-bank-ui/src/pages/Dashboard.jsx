@@ -540,9 +540,10 @@ export const Dashboard = () => {
               onChange={(e) => setSelectedAccNumber(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-navy-900 border-slate-200 dark:border-navy-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] text-sm"
             >
+              <option value="">-- Select Account --</option>
               {summaryData?.accounts?.map((acc) => (
                 <option key={acc.id} value={acc.accountNumber}>
-                  {acc.accountType} ({acc.accountNumber}) - Balance: {formatCurrency(acc.balance)}
+                  {acc.accountType || 'Account'} ({acc.accountNumber || 'N/A'}) - Balance: {formatCurrency(acc.balance || 0)}
                 </option>
               ))}
             </select>
