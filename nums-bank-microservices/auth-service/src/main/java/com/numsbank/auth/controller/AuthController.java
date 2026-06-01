@@ -27,7 +27,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = "https://nums-bank.vercel.app", allowCredentials = "true")
 public class AuthController {
 
     private final UserService userService;

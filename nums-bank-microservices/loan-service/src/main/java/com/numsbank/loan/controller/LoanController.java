@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/loans")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = "https://nums-bank.vercel.app", allowCredentials = "true")
 public class LoanController {
 
     private final LoanService loanService;
