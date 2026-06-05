@@ -52,16 +52,16 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white dark:bg-navy-900 border-b border-slate-100 dark:border-navy-800 shadow-sm flex items-center justify-between px-6 py-4">
+    <header className="sticky top-0 z-40 w-full bg-white dark:bg-navy-900 border-b border-slate-100 dark:border-navy-800 shadow-sm flex items-center justify-between px-4 py-3 lg:px-6 lg:py-4">
       {/* Welcome + Live Clock */}
       <div className="flex flex-col gap-0.5">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 font-sans">
+        <h2 className="text-base lg:text-lg font-bold text-slate-800 dark:text-slate-100 font-sans">
           {greeting},{' '}
           <span className="text-indigo-600 dark:text-[#FFD700]">
             {user?.fullName || 'Valued Client'}
           </span>
         </h2>
-        <span className="text-xs text-slate-400 dark:text-navy-500 font-medium">
+        <span className="text-[10px] lg:text-xs text-slate-400 dark:text-navy-500 font-medium">
           {time.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
           {' | '}
           {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -69,7 +69,7 @@ export const Header = () => {
       </div>
 
       {/* Right-side Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 lg:gap-4">
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
@@ -93,7 +93,7 @@ export const Header = () => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-2xl shadow-gold-glow p-4 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="absolute right-0 mt-3 w-72 lg:w-80 bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-2xl shadow-gold-glow p-4 animate-in fade-in slide-in-from-top-3 duration-200">
               <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-slate-100 dark:border-navy-800">
                 Recent Alerts
               </h3>
