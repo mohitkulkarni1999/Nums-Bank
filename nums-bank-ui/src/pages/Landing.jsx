@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import numsBankBanner from '../assets/nums_bank_banner.webp';
+import heroImage from '../assets/hero.png';
 import { 
   ShieldCheck, 
   Zap, 
@@ -67,7 +69,7 @@ export const Landing = () => {
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src="/src/assets/nums_bank_banner.webp" 
+            src={numsBankBanner} 
             alt="NUMS Bank Banner" 
             className="w-full h-full object-cover"
           />
