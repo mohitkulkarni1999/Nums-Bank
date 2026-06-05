@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext();
@@ -7,6 +7,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+  }, []);
 
   // Validate session on startup
   useEffect(() => {
@@ -23,9 +30,9 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     fetchSession();
-  }, [token]);
+  }, [token, logout]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token: jwtToken, userDetails } = response.data;
@@ -44,10 +51,10 @@ export const AuthProvider = ({ children }) => {
       const msg = error.response?.data?.message || 'Login failed. Please check your credentials.';
       return { success: false, error: msg };
     }
-  };
+  }, []);
 
   // Completely separate admin login — calls /api/auth/login
-  const adminLogin = async (email, password) => {
+  const adminLogin = useCallback(async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token: jwtToken, userDetails } = response.data;
@@ -61,9 +68,9 @@ export const AuthProvider = ({ children }) => {
       const msg = error.response?.data?.message || 'Admin authentication failed.';
       return { success: false, error: msg };
     }
-  };
+  }, []);
 
-  const register = async (name, email, phone, password, panNumber, aadharNumber) => {
+  const register = useCallback(async (name, email, phone, password, panNumber, aadharNumber) => {
     try {
       const response = await api.post('/auth/register', {
         name,
@@ -86,16 +93,9 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, error: msg };
     }
-  };
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-  };
-
-  const forgotPassword = async (email) => {
+  const forgotPassword = useCallback(async (email) => {
     try {
       const response = await api.post('/auth/forgot-password', { email });
       // OTP is no longer returned in the response for security — check server logs
@@ -103,21 +103,21 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Failed to trigger OTP.' };
     }
-  };
+  }, []);
 
-  const verifyOtp = async (email, otp, newPassword) => {
+  const verifyOtp = useCallback(async (email, otp, newPassword) => {
     try {
       const response = await api.post('/auth/verify-otp', { email, otp, newPassword });
       return { success: true, message: response.data.message };
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Failed to reset password.' };
     }
-  };
+  }, []);
 
-  const updateUserContext = (updatedDetails) => {
+  const updateUserContext = useCallback((updatedDetails) => {
     setUser(updatedDetails);
     localStorage.setItem('user', JSON.stringify(updatedDetails));
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{

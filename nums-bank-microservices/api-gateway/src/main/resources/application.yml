@@ -6,15 +6,31 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      httpclient:
+        # Allow up to 90 seconds for Render cold-start wakeup
+        connect-timeout: 10000
+        response-timeout: 90s
+        pool:
+          type: elastic
+          max-idle-time: 30s
       default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+        # Strip CORS headers from downstream services — gateway adds its own clean set
+        - RemoveResponseHeader=Access-Control-Allow-Origin
+        - RemoveResponseHeader=Access-Control-Allow-Credentials
+        - RemoveResponseHeader=Access-Control-Allow-Methods
+        - RemoveResponseHeader=Access-Control-Allow-Headers
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "https://nums-bank.vercel.app"
+            allowedOrigins:
+              - "https://nums-bank.vercel.app"
+              - "http://localhost:5173"
+              - "http://localhost:4173"
             allowedMethods: ["GET","POST","PUT","DELETE","OPTIONS","PATCH"]
-            allowedHeaders: ["Authorization","Content-Type","Cache-Control"]
+            allowedHeaders: ["Authorization","Content-Type","Cache-Control","X-Requested-With"]
+            exposedHeaders: ["Authorization"]
             allowCredentials: true
+            maxAge: 3600
       routes:
         # ── Auth Service ──────────────────────────────────
         - id: auth-service
@@ -49,3 +65,4 @@ spring:
 logging:
   level:
     org.springframework.cloud.gateway: INFO
+    reactor.netty.http.client: WARN

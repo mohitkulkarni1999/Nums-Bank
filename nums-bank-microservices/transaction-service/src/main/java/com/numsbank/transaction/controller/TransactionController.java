@@ -50,11 +50,12 @@ public class TransactionController {
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false, defaultValue = "ALL") String type,
-            @RequestParam(required = false, defaultValue = "ALL") String status) {
+            @RequestParam(required = false, defaultValue = "ALL") String status,
+            @RequestParam(required = false) String accountNumber) {
         
         User user = userService.getCurrentUser();
         Page<Transaction> history = transactionService.getTransactionHistory(
-                user, page, size, fromDate, toDate, type, status
+                user, page, size, fromDate, toDate, type, status, accountNumber
         );
 
         return ResponseEntity.ok(history);

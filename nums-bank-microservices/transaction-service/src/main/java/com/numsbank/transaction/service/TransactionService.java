@@ -175,49 +175,44 @@ public class TransactionService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public Page<Transaction> getTransactionHistory(User user, int page, int size, String fromDate, String toDate, String type, String status) {
+    public Page<Transaction> getTransactionHistory(User user, int page, int size, String fromDate, String toDate, String type, String status, String accountNumber) {
         List<Account> accounts = accountRepository.findByUser(user);
         if (accounts.isEmpty()) {
             return new PageImpl<>(new ArrayList<>());
         }
 
-        List<String> accountNumbers = accounts.stream().map(Account::getAccountNumber).collect(Collectors.toList());
-        List<Transaction> transactions;
-
-        if (fromDate != null && toDate != null) {
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-            LocalDateTime start = LocalDate.parse(fromDate, formatter).atStartOfDay();
-            LocalDateTime end = LocalDate.parse(toDate, formatter).atTime(LocalTime.MAX);
-            transactions = transactionRepository.findUserTransactionsByDate(accounts, accountNumbers, start, end);
-        } else {
-            transactions = transactionRepository.findAllUserTransactions(accounts, accountNumbers);
+        if (accountNumber != null && !accountNumber.trim().isEmpty()) {
+            accounts = accounts.stream()
+                    .filter(a -> a.getAccountNumber().equals(accountNumber))
+                    .collect(Collectors.toList());
+            if (accounts.isEmpty()) {
+                return new PageImpl<>(new ArrayList<>());
+            }
         }
 
-        Set<Long> accountIds = accounts.stream().map(Account::getId).collect(Collectors.toSet());
-        List<Transaction> filtered = transactions.stream()
-                .filter(t -> {
-                    if (type != null && !type.isEmpty() && !"ALL".equalsIgnoreCase(type)) {
-                        boolean isDebit = t.getFromAccount() != null
-                                && accountIds.contains(t.getFromAccount().getId());
-                        if ("DEBIT".equalsIgnoreCase(type) && !isDebit) return false;
-                        if ("CREDIT".equalsIgnoreCase(type) && isDebit) return false;
-                    }
-                    if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
-                        if (!status.equalsIgnoreCase(t.getStatus())) return false;
-                    }
-                    return true;
-                })
-                .collect(Collectors.toList());
+        List<String> accountNumbers = accounts.stream().map(Account::getAccountNumber).collect(Collectors.toList());
+
+        LocalDateTime start = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2099, 12, 31, 23, 59, 59);
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        if (fromDate != null && !fromDate.trim().isEmpty()) {
+            start = LocalDate.parse(fromDate, formatter).atStartOfDay();
+        }
+        if (toDate != null && !toDate.trim().isEmpty()) {
+            end = LocalDate.parse(toDate, formatter).atTime(LocalTime.MAX);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
-        int startIdx = (int) pageable.getOffset();
-        int endIdx = Math.min(startIdx + pageable.getPageSize(), filtered.size());
-
-        List<Transaction> pageContent = startIdx >= filtered.size()
-                ? new ArrayList<>()
-                : filtered.subList(startIdx, endIdx);
-
-        return new PageImpl<>(pageContent, pageable, filtered.size());
+        return transactionRepository.findFilteredTransactions(
+                accounts, 
+                accountNumbers, 
+                start, 
+                end, 
+                status != null ? status : "ALL", 
+                type != null ? type : "ALL", 
+                pageable
+        );
     }
 
     public Transaction getTransactionById(String transactionId, User user) {
@@ -352,9 +347,18 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
+    // Shared RestTemplate — reuse connections instead of creating per-request
+    private final org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+
+    // Loan-service base URL — use Render URL in production (set via env var LOAN_SERVICE_URL)
+    private static final String LOAN_SERVICE_URL =
+            System.getenv("LOAN_SERVICE_URL") != null
+            ? System.getenv("LOAN_SERVICE_URL")
+            : "https://loan-service-gkpk.onrender.com";
+
     @Transactional
     public Map<String, Object> payoffLoan(User user, Long loanId, Long accountId, String authHeader) {
-        // Get user's account
+        // Get user's accounts
         List<Account> accounts = accountRepository.findByUser(user);
         if (accounts.isEmpty()) {
             throw new CustomException("No account found for this user.", HttpStatus.NOT_FOUND);
@@ -367,61 +371,83 @@ public class TransactionService {
                     .findFirst()
                     .orElseThrow(() -> new CustomException("Account not found or does not belong to user.", HttpStatus.NOT_FOUND));
         } else {
-            account = accounts.get(0); // Use first account if not specified
+            account = accounts.get(0);
         }
 
         if (!account.getIsActive()) {
             throw new CustomException("Account is inactive.", HttpStatus.BAD_REQUEST);
         }
 
-        // Get loan details from loan-service
         try {
-            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-            String loanServiceUrl = "http://localhost:8084/api/loans/my-loans";
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.set("Authorization", authHeader);
-            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
+            headers.set("Content-Type", "application/json");
+
+            // Fetch all loans for this user from loan-service
+            String loanServiceUrl = LOAN_SERVICE_URL + "/api/loans/my-loans";
+            org.springframework.http.HttpEntity<String> getEntity = new org.springframework.http.HttpEntity<>(headers);
             org.springframework.http.ResponseEntity<List> loanResponse = restTemplate.exchange(
                 loanServiceUrl,
                 org.springframework.http.HttpMethod.GET,
-                entity,
+                getEntity,
                 List.class
             );
             List<Map<String, Object>> loans = loanResponse.getBody();
 
-            if (loans == null) {
-                throw new CustomException("Unable to fetch loan details.", HttpStatus.INTERNAL_SERVER_ERROR);
+            if (loans == null || loans.isEmpty()) {
+                throw new CustomException("No loans found for this user.", HttpStatus.NOT_FOUND);
             }
 
+            // Find the specific loan
             Map<String, Object> loan = loans.stream()
-                    .filter(l -> loanId.equals(((Number) l.get("id")).longValue()))
+                    .filter(l -> l.get("id") != null && loanId.equals(((Number) l.get("id")).longValue()))
                     .findFirst()
-                    .orElseThrow(() -> new CustomException("Loan not found.", HttpStatus.NOT_FOUND));
+                    .orElseThrow(() -> new CustomException("Loan not found with ID: " + loanId, HttpStatus.NOT_FOUND));
 
-            BigDecimal loanAmount = new BigDecimal(loan.get("outstandingAmount").toString());
+            // Safely extract outstanding amount — supports both field names
+            Object amtObj = loan.get("outstandingAmount") != null ? loan.get("outstandingAmount") : loan.get("remainingAmount");
+            if (amtObj == null) {
+                throw new CustomException("Unable to determine loan outstanding amount.", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            BigDecimal loanAmount = new BigDecimal(amtObj.toString());
             String loanStatus = (String) loan.get("status");
 
             if (!"ACTIVE".equals(loanStatus)) {
                 throw new CustomException("Loan is not active. Current status: " + loanStatus, HttpStatus.BAD_REQUEST);
             }
 
-            // Check if balance is sufficient
-            if (account.getBalance().compareTo(loanAmount) < 0) {
-                throw new CustomException("Insufficient account balance. Required: ₹" + loanAmount + ", Available: ₹" + account.getBalance(), HttpStatus.BAD_REQUEST);
+            if (loanAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new CustomException("Loan has already been paid off.", HttpStatus.BAD_REQUEST);
             }
 
-            // Deduct amount from account
+            // Check sufficient balance
+            if (account.getBalance().compareTo(loanAmount) < 0) {
+                throw new CustomException(
+                    "Insufficient account balance. Required: ₹" + loanAmount + ", Available: ₹" + account.getBalance(),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            // Deduct from account first
             account.setBalance(account.getBalance().subtract(loanAmount));
             accountRepository.save(account);
 
-            // Call loan-service to mark loan as paid with auth header
-            String payOffUrl = "http://localhost:8084/api/loans/pay-off";
-            Map<String, Object> payOffRequest = new HashMap<>();
-            payOffRequest.put("loanId", loanId);
-            org.springframework.http.HttpEntity<Map<String, Object>> payOffEntity = new org.springframework.http.HttpEntity<>(payOffRequest, headers);
-            restTemplate.postForEntity(payOffUrl, payOffEntity, Map.class);
+            // Call loan-service to mark loan as PAID
+            try {
+                String payOffUrl = LOAN_SERVICE_URL + "/api/loans/pay-off";
+                Map<String, Object> payOffRequest = new HashMap<>();
+                payOffRequest.put("loanId", loanId);
+                org.springframework.http.HttpEntity<Map<String, Object>> payOffEntity =
+                    new org.springframework.http.HttpEntity<>(payOffRequest, headers);
+                restTemplate.postForEntity(payOffUrl, payOffEntity, Map.class);
+            } catch (Exception payOffEx) {
+                // If marking paid fails, roll back the balance deduction
+                account.setBalance(account.getBalance().add(loanAmount));
+                accountRepository.save(account);
+                throw new CustomException("Loan payoff failed at loan service: " + payOffEx.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
-            // Create transaction record
+            // Record transaction
             String transactionId = "LOAN" + System.currentTimeMillis() + (int) (Math.random() * 900 + 100);
             Transaction transaction = new Transaction();
             transaction.setTransactionId(transactionId);
@@ -440,7 +466,6 @@ public class TransactionService {
             result.put("status", "PAID");
             result.put("message", "Loan paid off successfully. ₹" + loanAmount + " deducted from account.");
             result.put("remainingBalance", account.getBalance());
-
             return result;
 
         } catch (CustomException e) {

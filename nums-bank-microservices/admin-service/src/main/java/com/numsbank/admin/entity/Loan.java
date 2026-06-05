@@ -1,5 +1,6 @@
 package com.numsbank.admin.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -69,5 +70,6 @@ public class Loan {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    @JsonProperty("outstandingAmount")
     public BigDecimal getOutstandingAmount() { return remainingAmount; }
 }

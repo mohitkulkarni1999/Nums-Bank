@@ -351,7 +351,7 @@ export const Loans = () => {
                     <option value="">-- Select Active Loan --</option>
                     {myLoans.filter(l => l.status === 'ACTIVE').map((l) => (
                       <option key={l.id} value={String(l.id)}>
-                        {l.loanType} — Outstanding: {formatCurrency(l.outstandingAmount)}
+                        {l.loanType} — Outstanding: {formatCurrency(l.outstandingAmount ?? l.remainingAmount)}
                       </option>
                     ))}
                   </select>
@@ -426,7 +426,7 @@ export const Loans = () => {
                     </div>
                     <div className="flex flex-col text-right gap-2">
                       <div>
-                        <span className="font-extrabold text-slate-800 dark:text-slate-200">{formatCurrency(l.outstandingAmount)}</span>
+                        <span className="font-extrabold text-slate-800 dark:text-slate-200">{formatCurrency(l.outstandingAmount ?? l.remainingAmount)}</span>
                         <span className="text-[9px] font-bold text-slate-400">EMI: {formatCurrency(l.emiAmount)}</span>
                       </div>
                       {l.status === 'ACTIVE' && (
@@ -542,7 +542,7 @@ export const Loans = () => {
                     </div>
                     <div className="flex justify-between items-center text-sm mt-1">
                       <span className="text-slate-500 dark:text-slate-400">Amount to Pay:</span>
-                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(loan.outstandingAmount)}</span>
+                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(loan.outstandingAmount ?? loan.remainingAmount)}</span>
                     </div>
                   </div>
 

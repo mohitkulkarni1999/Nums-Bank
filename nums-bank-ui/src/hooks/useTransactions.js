@@ -24,11 +24,12 @@ export const useTransactions = () => {
     setLoading(true);
     setError(null);
     try {
-      const { page = 0, size = 10, fromDate, toDate, type = 'ALL', status = 'ALL' } = filters;
+      const { page = 0, size = 10, fromDate, toDate, type = 'ALL', status = 'ALL', accountNumber } = filters;
       
       let url = `/transactions/history?page=${page}&size=${size}&type=${type}&status=${status}`;
       if (fromDate) url += `&fromDate=${fromDate}`;
       if (toDate) url += `&toDate=${toDate}`;
+      if (accountNumber) url += `&accountNumber=${accountNumber}`;
 
       const response = await api.get(url);
       setLoading(false);

@@ -37,4 +37,21 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         @Param("accountNumbers") List<String> accountNumbers, 
         Pageable pageable
     );
+
+    @Query("SELECT t FROM Transaction t WHERE (t.fromAccount IN :accounts OR t.toAccountNumber IN :accountNumbers) " +
+           "AND t.createdAt BETWEEN :startDate AND :endDate " +
+           "AND (:status = 'ALL' OR LOWER(t.status) = LOWER(:status)) " +
+           "AND (:type = 'ALL' " +
+           "     OR (:type = 'DEBIT' AND t.fromAccount IN :accounts) " +
+           "     OR (:type = 'CREDIT' AND (t.fromAccount IS NULL OR t.fromAccount NOT IN :accounts))) " +
+           "ORDER BY t.createdAt DESC")
+    Page<Transaction> findFilteredTransactions(
+        @Param("accounts") List<Account> accounts, 
+        @Param("accountNumbers") List<String> accountNumbers, 
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate,
+        @Param("status") String status,
+        @Param("type") String type,
+        Pageable pageable
+    );
 }
