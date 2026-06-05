@@ -8,17 +8,15 @@ spring:
     gateway:
       httpclient:
         # Allow up to 90 seconds for Render cold-start wakeup
-        connect-timeout: 10000
+        connect-timeout: 90000
         response-timeout: 90s
         pool:
           type: elastic
           max-idle-time: 30s
       default-filters:
-        # Strip CORS headers from downstream services — gateway adds its own clean set
-        - RemoveResponseHeader=Access-Control-Allow-Origin
-        - RemoveResponseHeader=Access-Control-Allow-Credentials
-        - RemoveResponseHeader=Access-Control-Allow-Methods
-        - RemoveResponseHeader=Access-Control-Allow-Headers
+        # Deduplicate downstream CORS headers to prevent duplicate header browser errors
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_UNIQUE
+
       globalcors:
         cors-configurations:
           '[/**]':
