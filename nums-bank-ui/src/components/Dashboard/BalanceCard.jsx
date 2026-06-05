@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, ShieldCheck, Landmark } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Landmark, Plus } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { useCountUp } from '../../hooks/useCountUp';
 
@@ -17,6 +17,33 @@ export const BalanceCard = ({ accounts = [], userName }) => {
   useEffect(() => {
     setShowBalance(true);
   }, []);
+
+  // If no accounts exist, show a message to create accounts
+  if (accounts.length === 0) {
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 dark:from-[#0A1926] dark:via-[#11293e] dark:to-[#0A1926] text-white rounded-3xl p-6 shadow-gold-glow border border-[#FFD700]/10 flex flex-col justify-center items-center min-h-[220px]">
+        <div className="absolute right-0 top-0 w-48 h-48 bg-gradient-radial from-[#FFD700]/5 to-transparent pointer-events-none rounded-full blur-2xl" />
+        
+        <div className="flex flex-col items-center gap-4 z-10 text-center">
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+            <Plus className="w-8 h-8 text-[#FFD700]" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-lg font-bold text-slate-200">No Accounts Linked</h3>
+            <p className="text-xs text-slate-400 max-w-[200px]">
+              Create a Savings or Current account to start banking
+            </p>
+          </div>
+          <a
+            href="/profile"
+            className="mt-2 px-6 py-2.5 bg-[#FFD700] hover:bg-[#ca8a04] text-slate-900 font-bold rounded-xl text-sm transition-all"
+          >
+            Create Account
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 dark:from-[#0A1926] dark:via-[#11293e] dark:to-[#0A1926] text-white rounded-3xl p-6 shadow-gold-glow border border-[#FFD700]/10 flex flex-col justify-between min-h-[220px]">
