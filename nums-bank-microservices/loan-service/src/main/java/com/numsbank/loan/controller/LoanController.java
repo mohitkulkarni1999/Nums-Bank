@@ -2,6 +2,7 @@ package com.numsbank.loan.controller;
 
 import com.numsbank.loan.entity.Loan;
 import com.numsbank.loan.entity.User;
+import com.numsbank.loan.service.EmailService;
 import com.numsbank.loan.service.LoanService;
 import com.numsbank.loan.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +19,12 @@ public class LoanController {
 
     private final LoanService loanService;
     private final UserService userService;
+    private final EmailService emailService;
 
-    public LoanController(LoanService loanService, UserService userService) {
+    public LoanController(LoanService loanService, UserService userService, EmailService emailService) {
         this.loanService = loanService;
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/calculate-emi")
@@ -43,6 +46,20 @@ public class LoanController {
         int tenureMonths = tenureYears * 12;
 
         Loan loan = loanService.applyForLoan(user, type, amount, tenureMonths);
+
+        // Send loan approval email
+        try {
+            emailService.sendLoanApprovalEmail(
+                user.getEmail(),
+                type,
+                amount.toString(),
+                String.valueOf(tenureYears)
+            );
+        } catch (Exception e) {
+            // Log error but don't fail loan application
+            System.err.println("Failed to send loan approval email: " + e.getMessage());
+        }
+
         return ResponseEntity.ok(loan);
     }
 

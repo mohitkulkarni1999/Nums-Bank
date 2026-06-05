@@ -4,6 +4,7 @@ import com.numsbank.auth.config.JwtTokenProvider;
 import com.numsbank.auth.entity.User;
 import com.numsbank.auth.exception.CustomException;
 import com.numsbank.auth.service.AuditService;
+import com.numsbank.auth.service.EmailService;
 import com.numsbank.auth.service.LoginAttemptService;
 import com.numsbank.auth.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,17 +36,20 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final LoginAttemptService loginAttemptService;
     private final AuditService auditService;
+    private final EmailService emailService;
 
     public AuthController(UserService userService,
                           AuthenticationManager authenticationManager,
                           JwtTokenProvider tokenProvider,
                           LoginAttemptService loginAttemptService,
-                          AuditService auditService) {
+                          AuditService auditService,
+                          EmailService emailService) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.loginAttemptService = loginAttemptService;
         this.auditService = auditService;
+        this.emailService = emailService;
     }
 
     private String getClientIp(HttpServletRequest request) {
@@ -62,6 +66,14 @@ public class AuthController {
         );
         auditService.log(user.getId(), user.getEmail(), "REGISTRATION",
                 "New user registered", getClientIp(httpRequest));
+
+        // Send welcome email
+        try {
+            emailService.sendRegistrationEmail(user.getEmail(), user.getFullName());
+        } catch (Exception e) {
+            // Log error but don't fail registration
+            System.err.println("Failed to send registration email: " + e.getMessage());
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Registration successful. You can now log in.");
@@ -121,12 +133,20 @@ public class AuthController {
         if (email == null || email.isBlank()) {
             throw new CustomException("Email is required.", HttpStatus.BAD_REQUEST);
         }
-        userService.generateForgotPasswordOtp(email);
+        String otp = userService.generateForgotPasswordOtp(email);
         auditService.log(null, email, "PASSWORD_RESET_REQUESTED",
                 "OTP requested for password reset", getClientIp(httpRequest));
 
+        // Send OTP via email
+        try {
+            emailService.sendOtpEmail(email, otp);
+        } catch (Exception e) {
+            // Log error but don't fail the request
+            System.err.println("Failed to send OTP email: " + e.getMessage());
+        }
+
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "OTP sent to registered email/phone. Valid for 5 minutes.");
+        response.put("message", "OTP sent to registered email. Valid for 5 minutes.");
         return ResponseEntity.ok(response);
     }
 

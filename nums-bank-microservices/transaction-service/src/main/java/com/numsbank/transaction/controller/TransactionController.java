@@ -3,6 +3,7 @@ package com.numsbank.transaction.controller;
 import com.numsbank.transaction.entity.Beneficiary;
 import com.numsbank.transaction.entity.Transaction;
 import com.numsbank.transaction.entity.User;
+import com.numsbank.transaction.service.EmailService;
 import com.numsbank.transaction.service.TransactionService;
 import com.numsbank.transaction.service.UserService;
 import org.springframework.data.domain.Page;
@@ -20,10 +21,12 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final UserService userService;
+    private final EmailService emailService;
 
-    public TransactionController(TransactionService transactionService, UserService userService) {
+    public TransactionController(TransactionService transactionService, UserService userService, EmailService emailService) {
         this.transactionService = transactionService;
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/send")
@@ -39,6 +42,20 @@ public class TransactionController {
         Transaction transaction = transactionService.sendMoney(
                 user, fromAccountId, toAccountNumber, amount, remarks, transactionType, transactionPin
         );
+
+        // Send transaction alert email
+        try {
+            emailService.sendTransactionAlert(
+                user.getEmail(),
+                transactionType,
+                amount.toString(),
+                transaction.getFromAccount().getAccountNumber(),
+                transaction.getFromAccount().getBalance().toString()
+            );
+        } catch (Exception e) {
+            // Log error but don't fail transaction
+            System.err.println("Failed to send transaction alert email: " + e.getMessage());
+        }
 
         return ResponseEntity.ok(transaction);
     }
@@ -101,6 +118,21 @@ public class TransactionController {
         BigDecimal amount = new BigDecimal(body.get("amount").toString());
 
         Transaction transaction = transactionService.depositCash(user, accountNumber, amount);
+
+        // Send transaction alert email
+        try {
+            emailService.sendTransactionAlert(
+                user.getEmail(),
+                "DEPOSIT",
+                amount.toString(),
+                accountNumber,
+                transaction.getFromAccount().getBalance().toString()
+            );
+        } catch (Exception e) {
+            // Log error but don't fail transaction
+            System.err.println("Failed to send deposit alert email: " + e.getMessage());
+        }
+
         return ResponseEntity.ok(transaction);
     }
 

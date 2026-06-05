@@ -3,6 +3,7 @@ package com.numsbank.account.controller;
 import com.numsbank.account.entity.Account;
 import com.numsbank.account.entity.User;
 import com.numsbank.account.service.AccountService;
+import com.numsbank.account.service.EmailService;
 import com.numsbank.account.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,12 @@ public class AccountController {
 
     private final AccountService accountService;
     private final UserService userService;
+    private final EmailService emailService;
 
-    public AccountController(AccountService accountService, UserService userService) {
+    public AccountController(AccountService accountService, UserService userService, EmailService emailService) {
         this.accountService = accountService;
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/create")
@@ -32,6 +35,20 @@ public class AccountController {
         BigDecimal initialDeposit = new BigDecimal(body.get("initialDeposit").toString());
 
         Account account = accountService.createAccount(user, type, initialDeposit);
+
+        // Send account creation email
+        try {
+            emailService.sendAccountCreationEmail(
+                user.getEmail(),
+                account.getAccountNumber(),
+                account.getAccountType(),
+                initialDeposit.toString()
+            );
+        } catch (Exception e) {
+            // Log error but don't fail account creation
+            System.err.println("Failed to send account creation email: " + e.getMessage());
+        }
+
         return ResponseEntity.ok(account);
     }
 

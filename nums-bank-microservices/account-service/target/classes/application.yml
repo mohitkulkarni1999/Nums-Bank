@@ -44,6 +44,20 @@ numsbank:
   jwt:
     secret: ${JWT_SECRET:9a628a508933b4e6d42d3266a014e7a8e7e1f40d6cfa9ef488a0e8bb335d25a6}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    from: ${SMTP_FROM:noreply@numsbank.com}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: ${SMTP_HOST:smtp.gmail.com}
 
 logging:
   level:
